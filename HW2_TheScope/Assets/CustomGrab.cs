@@ -16,10 +16,22 @@ public class CustomGrab : MonoBehaviour
     private Vector3 previousPosition;
     private Quaternion previousRotation;
 
+    private Rigidbody grabbedRb;
+    private bool originalUseGravity;
+    private bool originalIsKinematic;
+    private Vector3 previousFramePosition;
+    private Vector3 releaseVelocity;
+    public InputActionReference precisionRotateAction;
+
     private void Start()
     {
         action.action.Enable();
+        precisionRotateAction.action.Enable();
 
+        // Initialize previous position and rotation
+        previousPosition = transform.position;
+        previousRotation = transform.rotation;
+        
         // Find the other hand
         foreach(CustomGrab c in transform.parent.GetComponentsInChildren<CustomGrab>())
         {
@@ -37,6 +49,24 @@ public class CustomGrab : MonoBehaviour
             if (!grabbedObject)
             {
                 grabbedObject = nearObjects.Count > 0 ? nearObjects[0] : otherHand.grabbedObject;
+                if (grabbedObject)
+                {
+                    grabbedRb = grabbedObject.GetComponent<Rigidbody>();
+
+                    if (grabbedRb)
+                    {
+                        // Store original state
+                        originalUseGravity = grabbedRb.useGravity;
+                        originalIsKinematic = grabbedRb.isKinematic;
+
+                        // Only override if it was dynamic
+                        if (!originalIsKinematic)
+                        {
+                            grabbedRb.useGravity = false;
+                            grabbedRb.isKinematic = true;
+                        }
+                    }
+                }
             }
             if (grabbedObject)
             {
@@ -47,16 +77,38 @@ public class CustomGrab : MonoBehaviour
                 offset = deltaRotation * offset;
 
                 grabbedObject.position = transform.position + offset;
-                grabbedObject.rotation = deltaRotation * grabbedObject.rotation;
+                float multiplier = precisionRotateAction.action.IsPressed() ? 2f : 1f;
+
+                // Convert deltaRotation to axis-angle
+                deltaRotation.ToAngleAxis(out float angle, out Vector3 axis);
+
+                // Multiply angle
+                Quaternion amplifiedRotation = Quaternion.AngleAxis(angle * multiplier, axis);
+
+                grabbedObject.rotation = amplifiedRotation * grabbedObject.rotation;
             }
         }
         // If let go of button, release object
         else if (grabbedObject)
+        {
+            if (grabbedRb)
+            {
+                // Restore original state
+                grabbedRb.useGravity = originalUseGravity;
+                grabbedRb.isKinematic = originalIsKinematic;
+                grabbedRb.linearVelocity = releaseVelocity;
+            }
+
             grabbedObject = null;
+            grabbedRb = null;
+        }
 
         // Should save the current position and rotation here
         previousPosition = transform.position;
         previousRotation = transform.rotation;
+
+        releaseVelocity = (transform.position - previousFramePosition) / Time.deltaTime;
+        previousFramePosition = transform.position;
     }
 
     private void OnTriggerEnter(Collider other)
