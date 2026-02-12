@@ -25,6 +25,6 @@ public class ScoreManager : MonoBehaviour
 
     void UpdateUI()
     {
-        scoreText.text = $"Score: {score} / {total}";
+        scoreText.text = $"Correctly sorted items:\n{score} / {total}";
     }
 }

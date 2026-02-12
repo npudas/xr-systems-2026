@@ -14,6 +14,8 @@ public class ItemSpawner : MonoBehaviour
 
     public void SpawnNew()
     {
+        
+        Quaternion randomRotation = Random.rotation;
         if (currentItem == null)
         {
             currentItem = Instantiate(itemPrefab, spawnPoint.position, spawnPoint.rotation);
@@ -21,7 +23,10 @@ public class ItemSpawner : MonoBehaviour
         else
         {
             currentItem.transform.position = spawnPoint.position;
-            currentItem.transform.rotation = spawnPoint.rotation;
+            currentItem.transform.SetPositionAndRotation(
+                spawnPoint.position,
+                randomRotation
+            );
         }
 
         currentItem.RandomizeState();

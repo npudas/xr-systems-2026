@@ -47,7 +47,7 @@ public class LensCameraController : MonoBehaviour
             playerCam.up,
             direction
         );
-         Debug.Log("Roll: " + roll);
+
         lens1Renderer.material.SetFloat("_RollCorrection", roll);
         lens2Renderer.material.SetFloat("_RollCorrection", roll);
     }
